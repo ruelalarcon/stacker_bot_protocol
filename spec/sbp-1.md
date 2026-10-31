@@ -381,6 +381,12 @@ boundaries have no gameplay effect, clients may aggregate pending garbage into a
 single chunk containing the total line count. Bots may also aggregate the array
 when their strategy only needs the total pending garbage.
 
+Pending garbage does not confirm a physical arrival. SBP/1 supplies neither
+delivery times nor hole columns. Bots MAY project arrivals in hypothetical
+search states, but MUST keep those predictions separate from the current
+physical board and the root used to generate suggestions. A pending-garbage
+update MUST NOT by itself add, remove, or reposition board cells.
+
 ### 9.3 `board`
 
 Replaces the bot's current physical board inside the active session. This
@@ -444,6 +450,21 @@ reconciliation is needed. The client remains authoritative: if later observed
 state differs from this intended advancement, the client must correct with
 `board` when only physical board cells changed, or restart from `start` when
 non-board state changed.
+
+The physical effect of `advance` is the accepted piece placement and resulting
+line clears under the active rules. It does not confirm a garbage arrival,
+even when `incoming_garbage` is non-empty. Bots MUST NOT promote a hypothetical
+garbage rise into the current physical board or suggestion root on `advance`.
+Suggestions MUST be legal on the latest authoritative board after accepted
+placements and their line clears, without requiring a predicted arrival.
+
+Clients send `board` (or restart when unsupported) when a physical garbage rise
+is observed. They are not required to resend an otherwise matching board after
+every `advance` merely because garbage is pending. For example, after
+`suggest` with `incoming_garbage: [5]` followed by a non-clearing `advance`,
+the next suggestion must still use the board without those five rows unless
+the client has supplied a board containing the actual rise. Repeating `[5]`
+reports that garbage is still pending; it is not a second arrival.
 
 | Field | Required | Type | Default | Description |
 |---|---:|---|---|---|
